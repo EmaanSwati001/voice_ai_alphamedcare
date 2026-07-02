@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaMed Voice AI - Control Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for modern premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="logo-container">
+                <div class="pulse-ring"></div>
+                <h1>AlphaMed <span class="accent-text">Voice AI</span></h1>
+            </div>
+            <div class="connection-status">
+                <span class="status-indicator" id="connectionIndicator"></span>
+                <span id="connectionText">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Content Layout -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Side: Clinic Information Systems (Claims/Patients/Appts) -->
+            <section class="info-panel glass-card">
+                <h2>Patient & Billing Database</h2>
+                
+                <!-- Active Patient Section -->
+                <div class="data-group">
+                    <h3>Active Patient Profile</h3>
+                    <div class="data-row">
+                        <span class="label">Verification State:</span>
+                        <span class="value badge status-unverified" id="patientVerified">Unverified</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Patient Name:</span>
+                        <span class="value" id="patientName">--</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Policy Number:</span>
+                        <span class="value" id="patientPolicy">--</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Insurance Provider:</span>
+                        <span class="value" id="patientProvider">--</span>
+                    </div>
+                </div>
+
+                <!-- Active Claim/Billing Section -->
+                <div class="data-group">
+                    <h3>Financial Summary</h3>
+                    <div class="data-row">
+                        <span class="label">Outstanding Copay Balance:</span>
+                        <span class="value highlight-text" id="billingBalance">$0.00</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Total Claim Actions:</span>
+                        <span class="value" id="claimCount">0 Claims</span>
+                    </div>
+                    <div class="claims-list-mini" id="claimsList">
+                        <!-- Claim records will dynamically render here -->
+                        <p class="placeholder-text">Verify patient to display claims</p>
+                    </div>
+                </div>
+
+                <!-- Appointments Section -->
+                <div class="data-group">
+                    <h3>Scheduled Appointments</h3>
+                    <div class="appointments-list-mini" id="appointmentsList">
+                        <p class="placeholder-text">Verify patient to display appointments</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Live Voice Agent & Transcription -->
+            <section class="conversation-panel glass-card">
+                <div class="panel-header">
+                    <h2>Live Call Console</h2>
+                    <div class="agent-mode-selector">
+                        <label for="modeToggle">Voice Mode:</label>
+                        <select id="modeToggle">
+                            <option value="browser" selected>Free Browser Mode (No Keys)</option>
+                            <option value="server">Premium AI Server Mode</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Call Status Bar -->
+                <div class="call-status-bar" id="callStatusBar">
+                    <span class="pulse-dot"></span>
+                    <span id="callStatusText">Ready to start call</span>
+                </div>
+
+                <!-- Scrolling Transcript Log -->
+                <div class="transcript-container" id="transcriptContainer">
+                    <div class="chat-bubble assistant">
+                        <div class="bubble-content">
+                            Hello! Thank you for calling AlphaMed Clinic. I am your billing assistant. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Interface Controls -->
+                <div class="voice-controls-section">
+                    <!-- Audio Wave Visualization -->
+                    <div class="audio-wave" id="audioWave">
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                    </div>
+
+                    <!-- Glowing Orb Mic Button -->
+                    <div class="mic-container">
+                        <button class="mic-button" id="micButton" title="Start/Stop Call">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                            </svg>
+                        </button>
+                        <p class="help-text" id="helpText">Click microphone to start talking</p>
+                    </div>
+
+                    <!-- Keyboard Backup Input -->
+                    <div class="keyboard-input-group">
+                        <input type="text" id="keyboardInput" placeholder="Type a message instead..." autocomplete="off">
+                        <button id="sendBtn">Send</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

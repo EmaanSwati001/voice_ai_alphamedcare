@@ -1,0 +1,540 @@
+/* CSS Design System - AlphaMed Voice AI Control Dashboard */
+
+:root {
+    --bg-darkest: #090b10;
+    --bg-card: rgba(18, 22, 33, 0.7);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent-blue: #00f2fe;
+    --accent-indigo: #4facfe;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --success-green: #10b981;
+    --error-red: #ef4444;
+    --warning-orange: #f59e0b;
+    --pulse-glow: rgba(0, 242, 254, 0.25);
+    
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-darkest);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.08) 0px, transparent 50%);
+    overflow-x: hidden;
+}
+
+.app-container {
+    width: 95vw;
+    max-width: 1440px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- HEADER --- */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pulse-ring {
+    width: 14px;
+    height: 14px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
+    animation: ring-pulse 2s infinite;
+}
+
+@keyframes ring-pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(0, 242, 254, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 242, 254, 0);
+    }
+}
+
+.app-header h1 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.accent-text {
+    background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    background: var(--error-red);
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.status-indicator.online {
+    background: var(--success-green);
+    box-shadow: 0 0 8px var(--success-green);
+}
+
+/* --- DASHBOARD GRID --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+    flex-grow: 1;
+    height: calc(100% - 85px);
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    backdrop-filter: blur(16px);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.glass-card h2 {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    color: var(--text-primary);
+}
+
+/* --- LEFT PANEL: DATABASE INFO --- */
+.info-panel {
+    gap: 15px;
+}
+
+.data-group {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.data-group h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    margin-bottom: 5px;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.data-row .label {
+    color: var(--text-secondary);
+}
+
+.data-row .value {
+    font-weight: 500;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.status-unverified {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error-red);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-verified {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+}
+
+.highlight-text {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.placeholder-text {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 10px 0;
+    font-style: italic;
+}
+
+/* Claims and Appointment lists */
+.claims-list-mini, .appointments-list-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 5px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.claim-item, .appt-item {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-indigo);
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.claim-item.denied {
+    border-left-color: var(--error-red);
+}
+
+.claim-item.paid {
+    border-left-color: var(--success-green);
+}
+
+/* --- RIGHT PANEL: CONVERSATION --- */
+.conversation-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.panel-header h2 {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.agent-mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.agent-mode-selector label {
+    color: var(--text-secondary);
+}
+
+.agent-mode-selector select {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+.agent-mode-selector select option {
+    background: var(--bg-darkest);
+    color: var(--text-primary);
+}
+
+/* Call Status Info Bar */
+.call-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+}
+
+.call-status-bar.active .pulse-dot {
+    background: var(--accent-blue);
+    animation: ring-pulse 1.5s infinite;
+}
+
+.call-status-bar.transferred .pulse-dot {
+    background: var(--warning-orange);
+}
+
+/* Scrolling transcript */
+.transcript-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.chat-bubble {
+    display: flex;
+    width: 100%;
+}
+
+.chat-bubble.assistant {
+    justify-content: flex-start;
+}
+
+.chat-bubble.user {
+    justify-content: flex-end;
+}
+
+.bubble-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.chat-bubble.assistant .bubble-content {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    border-top-left-radius: 4px;
+}
+
+.chat-bubble.user .bubble-content {
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+    border: 1px solid rgba(0, 242, 254, 0.2);
+    color: #ffffff;
+    border-top-right-radius: 4px;
+}
+
+/* System notice events inside chat */
+.chat-bubble.system {
+    justify-content: center;
+}
+
+.chat-bubble.system .bubble-content {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: var(--warning-orange);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+/* --- VOICE CONTROLS SECTION --- */
+.voice-controls-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
+}
+
+/* Audio wave visualization bars */
+.audio-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.audio-wave.active {
+    opacity: 1;
+}
+
+.audio-wave .bar {
+    width: 3px;
+    height: 100%;
+    background: var(--accent-blue);
+    border-radius: 10px;
+    transition: height 0.1s ease;
+}
+
+.audio-wave.active .bar {
+    animation: wave-bounce 1s ease-in-out infinite alternate;
+}
+
+.audio-wave.active .bar:nth-child(2) { animation-delay: 0.15s; }
+.audio-wave.active .bar:nth-child(3) { animation-delay: 0.3s; }
+.audio-wave.active .bar:nth-child(4) { animation-delay: 0.45s; }
+.audio-wave.active .bar:nth-child(5) { animation-delay: 0.3s; }
+.audio-wave.active .bar:nth-child(6) { animation-delay: 0.15s; }
+.audio-wave.active .bar:nth-child(7) { animation-delay: 0.45s; }
+.audio-wave.active .bar:nth-child(8) { animation-delay: 0.2s; }
+
+@keyframes wave-bounce {
+    0% { height: 15%; }
+    100% { height: 100%; }
+}
+
+/* Glowing Mic Button */
+.mic-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.mic-button {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--bg-card), rgba(255, 255, 255, 0.02));
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mic-button:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.mic-button.active {
+    background: linear-gradient(135deg, var(--accent-indigo), var(--accent-blue));
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 0 20px var(--pulse-glow);
+    animation: button-pulse 1.8s infinite alternate;
+}
+
+@keyframes button-pulse {
+    0% {
+        box-shadow: 0 0 10px var(--pulse-glow);
+    }
+    100% {
+        box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
+    }
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Keyboard backup input */
+.keyboard-input-group {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.keyboard-input-group input {
+    flex-grow: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 10px 15px;
+    border-radius: 10px;
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: border-color 0.3s ease;
+}
+
+.keyboard-input-group input:focus {
+    border-color: var(--accent-indigo);
+}
+
+.keyboard-input-group button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.keyboard-input-group button:hover {
+    background: var(--text-primary);
+    color: var(--bg-darkest);
+}

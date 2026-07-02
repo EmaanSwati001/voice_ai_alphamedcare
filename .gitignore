@@ -1,0 +1,21 @@
+# Virtual Environment
+.venv/
+venv/
+
+# Environment Variables (sensitive keys!)
+.env
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local databases
+*.db
+medical_billing.db
+
+# IDE specific files
+.vscode/
+.idea/

@@ -1,0 +1,14 @@
+{
+  "chunks": [
+    "Source file (clinic_faq.md):\n## Denied Claims Policy\nIf an insurance claim is denied, the patient is notified via their Explanation of Benefits (EOB). \nThe most common reason for claim denials is \"Prior Authorization Required\", which means the insurance provider needed approval before the service was performed.\nFor denied claims due to prior authorization, our billing team must submit a retroactive authorization request or file an appeal within 180 days of the date of service.",
+    "Source file (clinic_faq.md):\n## Billing Disputes & Appeals\nPatients have the right to appeal any claim denial or billing charge. \nAppeals must be submitted in writing within 180 days of receiving the denial.\nFor help filing an appeal, patients can contact our Billing Support Team directly or request a transfer to a billing supervisor.",
+    "Source file (clinic_faq.md):\n## Payment Plans & Financial Assistance\nAlphaMed Clinic offers flexible payment plans for patients with outstanding balances.\nPatients can pay their bills in monthly installments over a period of 3, 6, or 12 months with 0% interest.\nTo set up a payment plan, patients must speak with a billing representative.\nWe also offer a 15% discount for bills paid in full within 10 days of the invoice date.",
+    "Source file (cpt_codes.md):\n## CPT 99212\nCPT Code 99212 represents a brief outpatient office visit for the evaluation and management of an established patient. \nTypically involves a minor problem or straightforward medical decision-making, lasting 10 to 19 minutes.",
+    "Source file (cpt_codes.md):\n## CPT 99213\nCPT Code 99213 represents a standard mid-level outpatient office visit for the evaluation and management of an established patient. \nTypically involves a low-complexity medical decision-making process, lasting 15 to 29 minutes.",
+    "Source file (cpt_codes.md):\n## CPT 99214\nCPT Code 99214 represents a comprehensive mid-to-high level outpatient office visit for the evaluation and management of an established patient. \nTypically involves moderate-complexity medical decision-making, lasting 30 to 39 minutes.",
+    "Source file (cpt_codes.md):\n## CPT 36415\nCPT Code 36415 represents a routine venipuncture procedure, which is the collection of a venous blood sample by draw (blood draw/lab draw). \nIt is standard for lab and diagnostic testing.",
+    "Source file (cpt_codes.md):\n## CPT 72148\nCPT Code 72148 represents a magnetic resonance imaging (MRI) scan of the lumbar spine (lower back) without contrast material. \nIt is commonly used to diagnose herniated discs, sciatica, spinal stenosis, or persistent lower back pain.",
+    "Source file (cpt_codes.md):\n## CPT 94640\nCPT Code 94640 represents an inhalation treatment (such as a nebulizer therapy) for acute airway obstruction. \nIt is commonly administered for patients suffering from asthma flares, COPD, or acute wheezing."
+  ],
+  "embeddings": []
+}
