@@ -471,9 +471,9 @@ function startCall() {
         addTranscriptBubble(welcome, 'assistant');
         speakText(welcome);
     } else {
-        // AI Server Websocket Mode (Phase 4 connection logic)
-        setCallStatus('Connecting to WebSocket...', 'active');
-        connectWebSocket();
+        // AI Server Mode – use ElevenLabs SDK via backend proxy
+        setCallStatus('Connecting to ElevenLabs...', 'active');
+        startElevenConversation();
     }
 }
 
@@ -495,8 +495,103 @@ function endCall() {
     if (wsConnection) {
         wsConnection.close();
         wsConnection = null;
+        // Clean up ElevenLabs resources
+        endElevenConversation();
+    }
+
+
+// --- ElevenLabs HTTP Integration Functions ---
+let elevenSessionId = null;
+let mediaRecorder = null;
+let audioStream = null;
+
+async function startElevenConversation() {
+    try {
+        const startRes = await fetch(`${API_BASE_URL}/elevenlabs/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!startRes.ok) throw new Error('Failed to start ElevenLabs session');
+        const data = await startRes.json();
+        elevenSessionId = data.session_id;
+        // Initialize microphone capture
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+        mediaRecorder.ondataavailable = async (e) => {
+            const blob = e.data;
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64Audio = reader.result.split(',')[1];
+                await sendAudioChunk(base64Audio);
+            };
+            reader.readAsDataURL(blob);
+        };
+        mediaRecorder.start(1000);
+        setCallStatus('Streaming audio to ElevenLabs...', 'active');
+    } catch (err) {
+        console.error(err);
+        setCallStatus('Error connecting to ElevenLabs', 'error');
     }
 }
+
+async function sendAudioChunk(b64Audio) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/elevenlabs/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: elevenSessionId, audio: b64Audio })
+        });
+        if (!res.ok) throw new Error('ElevenLabs processing error');
+        const result = await res.json();
+        if (result.transcript) {
+            addTranscriptBubble(result.transcript, 'assistant');
+        }
+        if (result.audio) {
+            const audioBlob = base64ToBlob(result.audio, 'audio/mpeg');
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+    } catch (e) {
+        console.error('Audio chunk error:', e);
+    }
+}
+
+function base64ToBlob(base64, mime) {
+    const bytes = atob(base64);
+    const len = bytes.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        arr[i] = bytes.charCodeAt(i);
+    }
+    return new Blob([arr], { type: mime });
+}
+
+async function endElevenConversation() {
+    try {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (audioStream) {
+            audioStream.getTracks().forEach(t => t.stop());
+        }
+        if (elevenSessionId) {
+            await fetch(`${API_BASE_URL}/elevenlabs/end`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: elevenSessionId })
+            });
+        }
+    } catch (e) {
+        console.error('Error ending ElevenLabs session', e);
+    } finally {
+        elevenSessionId = null;
+        mediaRecorder = null;
+        audioStream = null;
+    }
+}
+
+// Clean up ElevenLabs resources in endCall (function updated below)
 
 // Establish real-time WebSocket connection to backend voice agent
 function connectWebSocket() {
@@ -516,7 +611,7 @@ function connectWebSocket() {
     
     wsConnection.onmessage = (event) => {
         try {
-            const data = json.parse(event.data);
+            const data = JSON.parse(event.data);
             if (data.transcript) {
                 addTranscriptBubble(data.transcript, 'user');
             }

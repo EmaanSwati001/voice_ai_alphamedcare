@@ -8,6 +8,7 @@ from typing import List, Optional
 # Import database engine, session, Base, and CRUD operations
 from .database import engine, Base, get_db
 from . import crud
+from .elevenlabs.router import router as elevenlabs_router
 
 # Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
@@ -31,6 +32,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(elevenlabs_router, prefix="/elevenlabs")
 
 
 # --- PYDANTIC MODEL SCHEMAS ---
