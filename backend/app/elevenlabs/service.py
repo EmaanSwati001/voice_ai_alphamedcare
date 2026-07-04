@@ -16,7 +16,7 @@ import os
 import uuid
 import base64
 from typing import Dict, Any
-from elevenlabs import ElevenLabs
+from elevenlabs.client import ElevenLabs
 
 # Load secrets from the environment (already populated by `python-dotenv` in main)
 _ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")

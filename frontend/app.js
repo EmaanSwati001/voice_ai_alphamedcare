@@ -1,5 +1,5 @@
 /* frontend/app.js - Voice Dashboard Controller */
-
+console.log("APP VERSION 12345");
 // API Base URL (FastAPI backend port 8000)
 const API_BASE_URL = 'http://127.0.0.1:8000';
 const WS_BASE_URL = 'ws://127.0.0.1:8000';
@@ -67,7 +67,7 @@ if (SpeechRecognition) {
     recognition.onresult = async (event) => {
         const transcript = event.results[0][0].transcript;
         addTranscriptBubble(transcript, 'user');
-        
+
         // Process text using our local mock rule processor
         await processUserMessage(transcript);
     };
@@ -88,11 +88,11 @@ function setCallStatus(text, className = '') {
 function addTranscriptBubble(text, sender) {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender}`;
-    
+
     const content = document.createElement('div');
     content.className = 'bubble-content';
     content.innerText = text;
-    
+
     bubble.appendChild(content);
     transcriptContainer.appendChild(bubble);
     transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
@@ -101,10 +101,10 @@ function addTranscriptBubble(text, sender) {
 // Speak text out loud using browser Speech Synthesis API
 function speakText(text) {
     if (!synthesis) return;
-    
+
     // Stop any speech currently playing
     synthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(text);
     // Find a good female/male English voice if available
     const voices = synthesis.getVoices();
@@ -112,12 +112,12 @@ function speakText(text) {
     if (englishVoice) {
         utterance.voice = englishVoice;
     }
-    
+
     utterance.onstart = () => {
         setCallStatus('Speaking...', 'active');
         audioWave.classList.add('active');
     };
-    
+
     utterance.onend = () => {
         audioWave.classList.remove('active');
         if (isCallActive) {
@@ -130,7 +130,7 @@ function speakText(text) {
             setCallStatus('Ready to start call');
         }
     };
-    
+
     synthesis.speak(utterance);
 }
 
@@ -162,22 +162,22 @@ window.addEventListener('load', () => {
 
 async function processUserMessage(text) {
     const textLower = text.toLowerCase();
-    
+
     // 1. Identity Verification Request check
     // Looks for name keywords or DOB keywords or policy keywords
     if (!activePatient && (textLower.includes("verify") || textLower.includes("doe") || textLower.includes("smith") || textLower.includes("policy"))) {
-        
+
         let targetPatient = null;
         let dob = null;
         let policy = null;
-        
+
         // Mock simple extraction logic for our seed patients
         if (textLower.includes("john") || textLower.includes("doe") || textLower.includes("pol12345")) {
             targetPatient = { first_name: "John", last_name: "Doe", dob: "1985-05-15", policy: "POL12345" };
         } else if (textLower.includes("jane") || textLower.includes("smith") || textLower.includes("pol67890")) {
             targetPatient = { first_name: "Jane", last_name: "Smith", dob: "1990-08-22", policy: "POL67890" };
         }
-        
+
         if (targetPatient) {
             try {
                 setCallStatus('Querying database...', 'active');
@@ -191,11 +191,11 @@ async function processUserMessage(text) {
                         policy_number: targetPatient.policy
                     })
                 });
-                
+
                 if (response.ok) {
                     activePatient = await response.json();
                     updatePatientUI(activePatient);
-                    
+
                     const reply = `Thank you, I have verified your profile for ${activePatient.first_name} ${activePatient.last_name}. How can I assist you with your blue cross blue shield insurance claims or balances today?`;
                     addTranscriptBubble(reply, 'assistant');
                     speakText(reply);
@@ -205,13 +205,13 @@ async function processUserMessage(text) {
                 console.error("Verification database fetch failed:", error);
             }
         }
-        
+
         const failReply = "I was unable to verify your identity. Please state your full name, date of birth, and policy number clearly.";
         addTranscriptBubble(failReply, 'assistant');
         speakText(failReply);
         return;
     }
-    
+
     // 2. Check outstanding bill balance
     if (textLower.includes("balance") || textLower.includes("bill") || textLower.includes("invoice") || textLower.includes("pay")) {
         if (!activePatient) {
@@ -220,7 +220,7 @@ async function processUserMessage(text) {
             speakText(reply);
             return;
         }
-        
+
         try {
             const res = await fetch(`${API_BASE_URL}/api/patients/${activePatient.policy_number}/invoices`);
             if (res.ok) {
@@ -252,7 +252,7 @@ async function processUserMessage(text) {
             speakText(reply);
             return;
         }
-        
+
         // If checking a specific claim number (e.g. CLM10002)
         const claimMatch = textLower.match(/clm\d{5}/);
         if (claimMatch) {
@@ -269,7 +269,7 @@ async function processUserMessage(text) {
                     }
                     addTranscriptBubble(reply, 'assistant');
                     speakText(reply);
-                    
+
                     // Refresh claims UI list
                     fetchClaimsList();
                     return;
@@ -278,7 +278,7 @@ async function processUserMessage(text) {
                 console.error(err);
             }
         }
-        
+
         // Otherwise, list all claims for the patient
         try {
             const res = await fetch(`${API_BASE_URL}/api/patients/${activePatient.policy_number}/claims`);
@@ -304,7 +304,7 @@ async function processUserMessage(text) {
     // 4. Check CPT Codes or general FAQs (Local RAG keyword-mock simulation)
     if (textLower.includes("cpt") || textLower.includes("code") || textLower.includes("mri") || textLower.includes("appeal") || textLower.includes("denial reason")) {
         let answer = "Our billing team processes claims daily. Standard codes like 99213 are for office visits. What code are you inquiring about?";
-        
+
         if (textLower.includes("72148")) {
             answer = "CPT Code 72148 is an MRI scan of the lumbar spine (your lower back) without contrast. It is commonly used for persistent lower back pain.";
         } else if (textLower.includes("99213")) {
@@ -312,7 +312,7 @@ async function processUserMessage(text) {
         } else if (textLower.includes("appeal") || textLower.includes("how to appeal")) {
             answer = "You have the right to appeal any claim denial in writing within 180 days. I can transfer you to a billing supervisor if you need assistance filing it.";
         }
-        
+
         addTranscriptBubble(answer, 'assistant');
         speakText(answer);
         return;
@@ -324,7 +324,7 @@ async function processUserMessage(text) {
         addTranscriptBubble(reply, 'assistant');
         addTranscriptBubble("[SYSTEM] Call transferred to human billing representative. Call ended.", 'system');
         speakText(reply);
-        
+
         setTimeout(() => {
             endCall();
             setCallStatus("Transferred to Supervisor", "transferred");
@@ -346,7 +346,7 @@ function updatePatientUI(patient) {
     patientName.innerText = `${patient.first_name} ${patient.last_name}`;
     patientPolicy.innerText = patient.policy_number;
     patientProvider.innerText = patient.insurance_provider;
-    
+
     // Fetch and render claims and appointments automatically
     fetchClaimsList();
     fetchAppointmentsList();
@@ -366,12 +366,12 @@ async function fetchClaimsList() {
 function renderClaims(claims) {
     claimCount.innerText = `${claims.length} Claims`;
     claimsList.innerHTML = "";
-    
+
     if (claims.length === 0) {
         claimsList.innerHTML = `<p class="placeholder-text">No claims found.</p>`;
         return;
     }
-    
+
     claims.forEach(c => {
         const item = document.createElement('div');
         item.className = `claim-item ${c.status.toLowerCase()}`;
@@ -402,12 +402,12 @@ async function fetchAppointmentsList() {
 
 function renderAppointments(appts) {
     appointmentsList.innerHTML = "";
-    
+
     if (appts.length === 0) {
         appointmentsList.innerHTML = `<p class="placeholder-text">No upcoming appointments.</p>`;
         return;
     }
-    
+
     appts.forEach(a => {
         const item = document.createElement('div');
         item.className = `appt-item`;
@@ -460,11 +460,11 @@ function startCall() {
     isCallActive = true;
     micButton.classList.add('active');
     helpText.innerText = "Call active. Click microphone to end call.";
-    
+
     // Clear old transcripts and reset profile data
     transcriptContainer.innerHTML = "";
     resetPatientUI();
-    
+
     if (modeToggle.value === 'browser') {
         setCallStatus('Listening...', 'active');
         const welcome = "Hello! Thank you for calling AlphaMed Clinic. I am your billing assistant. How can I help you today?";
@@ -483,15 +483,15 @@ function endCall() {
     audioWave.classList.remove('active');
     helpText.innerText = "Click microphone to start talking";
     setCallStatus('Call ended');
-    
+
     if (recognition) {
         recognition.stop();
     }
-    
+
     if (synthesis) {
         synthesis.cancel();
     }
-    
+
     if (wsConnection) {
         wsConnection.close();
         wsConnection = null;
@@ -499,151 +499,151 @@ function endCall() {
         endElevenConversation();
     }
 
+}
+    // --- ElevenLabs HTTP Integration Functions ---
+    let elevenSessionId = null;
+    let mediaRecorder = null;
+    let audioStream = null;
 
-// --- ElevenLabs HTTP Integration Functions ---
-let elevenSessionId = null;
-let mediaRecorder = null;
-let audioStream = null;
-
-async function startElevenConversation() {
-    try {
-        const startRes = await fetch(`${API_BASE_URL}/elevenlabs/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (!startRes.ok) throw new Error('Failed to start ElevenLabs session');
-        const data = await startRes.json();
-        elevenSessionId = data.session_id;
-        // Initialize microphone capture
-        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
-        mediaRecorder.ondataavailable = async (e) => {
-            const blob = e.data;
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64Audio = reader.result.split(',')[1];
-                await sendAudioChunk(base64Audio);
+    async function startElevenConversation() {
+        try {
+            const startRes = await fetch(`${API_BASE_URL}/elevenlabs/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!startRes.ok) throw new Error('Failed to start ElevenLabs session');
+            const data = await startRes.json();
+            elevenSessionId = data.session_id;
+            // Initialize microphone capture
+            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+            mediaRecorder.ondataavailable = async (e) => {
+                const blob = e.data;
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result.split(',')[1];
+                    await sendAudioChunk(base64Audio);
+                };
+                reader.readAsDataURL(blob);
             };
-            reader.readAsDataURL(blob);
-        };
-        mediaRecorder.start(1000);
-        setCallStatus('Streaming audio to ElevenLabs...', 'active');
-    } catch (err) {
-        console.error(err);
-        setCallStatus('Error connecting to ElevenLabs', 'error');
+            mediaRecorder.start(1000);
+            setCallStatus('Streaming audio to ElevenLabs...', 'active');
+        } catch (err) {
+            console.error(err);
+            setCallStatus('Error connecting to ElevenLabs', 'error');
+        }
     }
-}
 
-async function sendAudioChunk(b64Audio) {
-    try {
-        const res = await fetch(`${API_BASE_URL}/elevenlabs/message`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: elevenSessionId, audio: b64Audio })
-        });
-        if (!res.ok) throw new Error('ElevenLabs processing error');
-        const result = await res.json();
-        if (result.transcript) {
-            addTranscriptBubble(result.transcript, 'assistant');
-        }
-        if (result.audio) {
-            const audioBlob = base64ToBlob(result.audio, 'audio/mpeg');
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.play();
-        }
-    } catch (e) {
-        console.error('Audio chunk error:', e);
-    }
-}
-
-function base64ToBlob(base64, mime) {
-    const bytes = atob(base64);
-    const len = bytes.length;
-    const arr = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        arr[i] = bytes.charCodeAt(i);
-    }
-    return new Blob([arr], { type: mime });
-}
-
-async function endElevenConversation() {
-    try {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        if (audioStream) {
-            audioStream.getTracks().forEach(t => t.stop());
-        }
-        if (elevenSessionId) {
-            await fetch(`${API_BASE_URL}/elevenlabs/end`, {
+    async function sendAudioChunk(b64Audio) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/elevenlabs/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: elevenSessionId })
+                body: JSON.stringify({ session_id: elevenSessionId, audio: b64Audio })
             });
-        }
-    } catch (e) {
-        console.error('Error ending ElevenLabs session', e);
-    } finally {
-        elevenSessionId = null;
-        mediaRecorder = null;
-        audioStream = null;
-    }
-}
-
-// Clean up ElevenLabs resources in endCall (function updated below)
-
-// Establish real-time WebSocket connection to backend voice agent
-function connectWebSocket() {
-    const wsUrl = `${WS_BASE_URL}/api/voice`;
-    console.log(`Connecting to voice agent WebSocket: ${wsUrl}`);
-    
-    wsConnection = new WebSocket(wsUrl);
-    
-    wsConnection.onopen = () => {
-        setCallStatus('Call Active (Streaming Audio)', 'active');
-        console.log("WebSocket connected successfully.");
-        // Prompt greeting
-        const greeting = "Hello, you are connected to the premium medical billing agent. How can I help you?";
-        addTranscriptBubble(greeting, 'assistant');
-        speakText(greeting);
-    };
-    
-    wsConnection.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            if (data.transcript) {
-                addTranscriptBubble(data.transcript, 'user');
+            if (!res.ok) throw new Error('ElevenLabs processing error');
+            const result = await res.json();
+            if (result.transcript) {
+                addTranscriptBubble(result.transcript, 'assistant');
             }
-            if (data.response) {
-                addTranscriptBubble(data.response, 'assistant');
-                speakText(data.response);
-            }
-            if (data.patient_update) {
-                updatePatientUI(data.patient_update);
+            if (result.audio) {
+                const audioBlob = base64ToBlob(result.audio, 'audio/mpeg');
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
             }
         } catch (e) {
-            console.error("Error parsing websocket JSON message:", e);
+            console.error('Audio chunk error:', e);
         }
-    };
-    
-    wsConnection.onclose = () => {
-        console.log("WebSocket connection closed.");
-        if (isCallActive) {
-            endCall();
-        }
-    };
-    
-    wsConnection.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setCallStatus('Connection Error. Reverting to Browser Mode.', 'transferred');
-        setTimeout(() => {
-            modeToggle.value = 'browser';
-            startCall();
-        }, 1500);
-    };
-}
+    }
 
+    function base64ToBlob(base64, mime) {
+        const bytes = atob(base64);
+        const len = bytes.length;
+        const arr = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            arr[i] = bytes.charCodeAt(i);
+        }
+        return new Blob([arr], { type: mime });
+    }
+
+    async function endElevenConversation() {
+        try {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (audioStream) {
+                audioStream.getTracks().forEach(t => t.stop());
+            }
+            if (elevenSessionId) {
+                await fetch(`${API_BASE_URL}/elevenlabs/end`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: elevenSessionId })
+                });
+            }
+        } catch (e) {
+            console.error('Error ending ElevenLabs session', e);
+        } finally {
+            elevenSessionId = null;
+            mediaRecorder = null;
+            audioStream = null;
+        }
+    }
+
+    // Clean up ElevenLabs resources in endCall (function updated below)
+
+    // Establish real-time WebSocket connection to backend voice agent
+    function connectWebSocket() {
+        const wsUrl = `${WS_BASE_URL}/api/voice`;
+        console.log(`Connecting to voice agent WebSocket: ${wsUrl}`);
+
+        wsConnection = new WebSocket(wsUrl);
+
+        wsConnection.onopen = () => {
+            setCallStatus('Call Active (Streaming Audio)', 'active');
+            console.log("WebSocket connected successfully.");
+            // Prompt greeting
+            const greeting = "Hello, you are connected to the premium medical billing agent. How can I help you?";
+            addTranscriptBubble(greeting, 'assistant');
+            speakText(greeting);
+        };
+
+        wsConnection.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.transcript) {
+                    addTranscriptBubble(data.transcript, 'user');
+                }
+                if (data.response) {
+                    addTranscriptBubble(data.response, 'assistant');
+                    speakText(data.response);
+                }
+                if (data.patient_update) {
+                    updatePatientUI(data.patient_update);
+                }
+            } catch (e) {
+                console.error("Error parsing websocket JSON message:", e);
+            }
+        };
+
+        wsConnection.onclose = () => {
+            console.log("WebSocket connection closed.");
+            if (isCallActive) {
+                endCall();
+            }
+        };
+
+        wsConnection.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            setCallStatus('Connection Error. Reverting to Browser Mode.', 'transferred');
+            setTimeout(() => {
+                modeToggle.value = 'browser';
+                startCall();
+            }, 1500);
+        };
+    }
+}
 
 // Bind event listeners
 micButton.addEventListener('click', toggleCall);
@@ -652,10 +652,10 @@ micButton.addEventListener('click', toggleCall);
 async function handleSend() {
     const messageText = keyboardInput.value.trim();
     if (!messageText) return;
-    
+
     addTranscriptBubble(messageText, 'user');
     keyboardInput.value = "";
-    
+
     if (isCallActive && modeToggle.value === 'browser') {
         if (recognition) recognition.stop(); // Stop mic temporarily while typing
         await processUserMessage(messageText);
@@ -677,9 +677,11 @@ keyboardInput.addEventListener('keypress', (e) => {
         handleSend();
     }
 });
+
 modeToggle.addEventListener('change', () => {
     if (isCallActive) {
         endCall();
         startCall();
     }
 });
+

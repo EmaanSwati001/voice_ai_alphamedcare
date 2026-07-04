@@ -5,9 +5,14 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 
+# Load environment variables early so ElevenLabs service can see them
+from dotenv import load_dotenv
+load_dotenv()
+
 # Import database engine, session, Base, and CRUD operations
 from .database import engine, Base, get_db
 from . import crud
+# Import ElevenLabs router AFTER env is loaded
 from .elevenlabs.router import router as elevenlabs_router
 
 # Create database tables if they do not exist
