@@ -19,3 +19,6 @@ medical_billing.db
 # IDE specific files
 .vscode/
 .idea/
+
+# Node dependencies
+node_modules/

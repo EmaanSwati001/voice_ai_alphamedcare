@@ -39,6 +39,22 @@ app.add_middleware(
 )
 app.include_router(elevenlabs_router, prefix="/elevenlabs")
 
+class ErrorLogInput(BaseModel):
+    message: str
+    source: Optional[str] = None
+    lineno: Optional[int] = None
+    colno: Optional[int] = None
+    stack: Optional[str] = None
+
+@app.post("/api/log-error")
+def log_error(data: ErrorLogInput):
+    print(f"\n[BROWSER ERROR] {data.message}")
+    if data.source:
+        print(f"  Source: {data.source}:{data.lineno}:{data.colno}")
+    if data.stack:
+        print(f"  Stack:\n{data.stack}")
+    return {"status": "logged"}
+
 
 # --- PYDANTIC MODEL SCHEMAS ---
 # Used for input validation and output documentation

@@ -1,0 +1,25 @@
+{
+  "name": "voice_ai_alphamedcare",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmaanSwati001/voice_ai_alphamedcare.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/EmaanSwati001/voice_ai_alphamedcare/issues"
+  },
+  "homepage": "https://github.com/EmaanSwati001/voice_ai_alphamedcare#readme",
+  "dependencies": {
+    "@elevenlabs/client": "^1.14.0",
+    "esbuild": "^0.28.1"
+  }
+}

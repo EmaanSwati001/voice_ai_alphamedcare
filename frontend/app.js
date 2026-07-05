@@ -8,6 +8,7 @@ const WS_BASE_URL = 'ws://127.0.0.1:8000';
 let activePatient = null;
 let isCallActive = false;
 let wsConnection = null;
+let elevenConversation = null;
 
 // Speech Recognition & Synthesis Web API (Free Browser Fallback)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -36,41 +37,61 @@ const keyboardInput = document.getElementById('keyboardInput');
 const sendBtn = document.getElementById('sendBtn');
 
 // Initialize Web Speech Recognition
-if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = false; // Stop listening when user stops talking
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
+let speechRecognized = false;
+
+function RecognitionWrapper() {
+    const rec = new SpeechRecognition();
+    rec.continuous = false; // Stop listening when user stops talking
+    rec.lang = 'en-US';
+    rec.interimResults = false;
 
     // Handle Speech Recognition Events
-    recognition.onstart = () => {
+    rec.onstart = () => {
+        speechRecognized = false;
         setCallStatus('Listening...', 'active');
         audioWave.classList.add('active');
+        console.log("Speech recognition started.");
     };
 
-    recognition.onerror = (e) => {
+    rec.onerror = (e) => {
         console.error('Speech recognition error:', e.error);
         if (e.error === 'no-speech') {
-            setCallStatus('No speech detected. Try again.', 'active');
+            setCallStatus('No speech detected. Listening...', 'active');
         }
         audioWave.classList.remove('active');
     };
 
-    recognition.onend = () => {
+    rec.onend = () => {
         audioWave.classList.remove('active');
         // If the call is still active, we can reset to "Ready" or process
         if (isCallActive && modeToggle.value === 'browser') {
-            setCallStatus('Processing speech...', 'active');
+            if (speechRecognized) {
+                setCallStatus('Processing speech...', 'active');
+            } else {
+                console.log("No speech recognized. Restarting loop...");
+                try {
+                    rec.start();
+                } catch (err) {
+                    console.error("Failed to restart speech recognition:", err);
+                }
+            }
         }
     };
 
-    recognition.onresult = async (event) => {
+    rec.onresult = async (event) => {
+        speechRecognized = true;
         const transcript = event.results[0][0].transcript;
         addTranscriptBubble(transcript, 'user');
 
         // Process text using our local mock rule processor
         await processUserMessage(transcript);
     };
+
+    return rec;
+}
+
+if (SpeechRecognition) {
+    recognition = new RecognitionWrapper();
 } else {
     console.warn("Speech recognition is not supported in this browser. Falling back to keyboard input only.");
     helpText.innerText = "Mic not supported. Please type your message below.";
@@ -495,103 +516,207 @@ function endCall() {
     if (wsConnection) {
         wsConnection.close();
         wsConnection = null;
-        // Clean up ElevenLabs resources
-        endElevenConversation();
     }
 
+    if (elevenConversation) {
+        elevenConversation.endSession();
+        elevenConversation = null;
+    }
 }
-    // --- ElevenLabs HTTP Integration Functions ---
-    let elevenSessionId = null;
-    let mediaRecorder = null;
-    let audioStream = null;
+    // --- ElevenLabs Browser Integration Functions ---
 
     async function startElevenConversation() {
         try {
+            // Request mic permission first
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+
             const startRes = await fetch(`${API_BASE_URL}/elevenlabs/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
             if (!startRes.ok) throw new Error('Failed to start ElevenLabs session');
             const data = await startRes.json();
-            elevenSessionId = data.session_id;
-            // Initialize microphone capture
-            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
-            mediaRecorder.ondataavailable = async (e) => {
-                const blob = e.data;
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const base64Audio = reader.result.split(',')[1];
-                    await sendAudioChunk(base64Audio);
-                };
-                reader.readAsDataURL(blob);
-            };
-            mediaRecorder.start(1000);
-            setCallStatus('Streaming audio to ElevenLabs...', 'active');
+            
+            setCallStatus('Connecting to ElevenLabs...', 'active');
+
+            elevenConversation = await ElevenLabs.Conversation.startSession({
+                signedUrl: data.signed_url,
+                onConnect: () => {
+                    setCallStatus('Call Active (ElevenLabs AI Receptionist)', 'active');
+                    audioWave.classList.add('active');
+                    console.log("ElevenLabs session connected successfully.");
+                },
+                onDisconnect: () => {
+                    setCallStatus('Call ended');
+                    audioWave.classList.remove('active');
+                    isCallActive = false;
+                    micButton.classList.remove('active');
+                    console.log("ElevenLabs session disconnected.");
+                },
+                onError: (error) => {
+                    console.error('ElevenLabs error:', error);
+                    setCallStatus('Error connecting to ElevenLabs', 'error');
+                },
+                onMessage: (msg) => {
+                    console.log('ElevenLabs message:', msg);
+                    // Differentiate between user transcript and assistant response
+                    if (msg.source === 'user') {
+                        addTranscriptBubble(msg.message, 'user');
+                    } else if (msg.source === 'ai') {
+                        addTranscriptBubble(msg.message, 'assistant');
+                    }
+                },
+                clientTools: {
+                    verify_patient: async (args) => {
+                        console.log("Tool verify_patient invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/verify-patient`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(args)
+                            });
+                            if (res.ok) {
+                                activePatient = await res.json();
+                                updatePatientUI(activePatient);
+                                
+                                // Fetch claims, appointments and invoices for the verified patient automatically
+                                const claimsRes = await fetch(`${API_BASE_URL}/api/patients/${activePatient.policy_number}/claims`);
+                                if (claimsRes.ok) {
+                                    renderClaims(await claimsRes.json());
+                                }
+                                const apptsRes = await fetch(`${API_BASE_URL}/api/patients/${activePatient.policy_number}/appointments`);
+                                if (apptsRes.ok) {
+                                    renderAppointments(await apptsRes.json());
+                                }
+                                const invoicesRes = await fetch(`${API_BASE_URL}/api/patients/${activePatient.policy_number}/invoices`);
+                                if (invoicesRes.ok) {
+                                    renderInvoices(await invoicesRes.json());
+                                }
+
+                                return JSON.stringify({
+                                    verified: true,
+                                    patient_id: activePatient.id,
+                                    first_name: activePatient.first_name,
+                                    last_name: activePatient.last_name,
+                                    insurance_provider: activePatient.insurance_provider
+                                });
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ verified: false, error: "Patient records not found." });
+                    },
+                    get_patient_claims: async (args) => {
+                        console.log("Tool get_patient_claims invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/patients/${args.policy_number}/claims`);
+                            if (res.ok) {
+                                const claims = await res.json();
+                                renderClaims(claims);
+                                return JSON.stringify(claims.map(c => ({
+                                    claim_number: c.claim_number,
+                                    date_of_service: c.date_of_service,
+                                    status: c.status,
+                                    total_amount: c.total_amount,
+                                    amount_paid: c.amount_paid
+                                })));
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ error: "Failed to fetch claims." });
+                    },
+                    get_claim_details: async (args) => {
+                        console.log("Tool get_claim_details invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/claims/${args.claim_number}`);
+                            if (res.ok) {
+                                const claim = await res.json();
+                                return JSON.stringify(claim);
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ error: "Claim not found." });
+                    },
+                    get_patient_invoices: async (args) => {
+                        console.log("Tool get_patient_invoices invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/patients/${args.policy_number}/invoices`);
+                            if (res.ok) {
+                                const invoices = await res.json();
+                                renderInvoices(invoices);
+                                return JSON.stringify(invoices.map(i => ({
+                                    invoice_number: i.invoice_number,
+                                    due_date: i.due_date,
+                                    outstanding_balance: i.outstanding_balance,
+                                    payment_status: i.payment_status
+                                })));
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ error: "Failed to fetch invoices." });
+                    },
+                    get_patient_appointments: async (args) => {
+                        console.log("Tool get_patient_appointments invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/patients/${args.policy_number}/appointments`);
+                            if (res.ok) {
+                                const appts = await res.json();
+                                renderAppointments(appts);
+                                return JSON.stringify(appts.map(a => ({
+                                    appointment_date: a.appointment_date,
+                                    provider_name: a.provider_name,
+                                    reason_for_visit: a.reason_for_visit,
+                                    status: a.status
+                                })));
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ error: "Failed to fetch appointments." });
+                    },
+                    schedule_new_appointment: async (args) => {
+                        console.log("Tool schedule_new_appointment invoked with args:", args);
+                        try {
+                            const res = await fetch(`${API_BASE_URL}/api/appointments`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(args)
+                            });
+                            if (res.ok) {
+                                const appt = await res.json();
+                                const apptsRes = await fetch(`${API_BASE_URL}/api/patients/${args.policy_number}/appointments`);
+                                if (apptsRes.ok) {
+                                    renderAppointments(await apptsRes.json());
+                                }
+                                return JSON.stringify({
+                                    status: "Scheduled",
+                                    appointment_id: appt.id,
+                                    appointment_date: appt.appointment_date,
+                                    provider_name: appt.provider_name
+                                });
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        return JSON.stringify({ error: "Failed to schedule appointment." });
+                    },
+                    transfer_to_human: async (args) => {
+                        console.log("Tool transfer_to_human invoked with args:", args);
+                        setCallStatus('Transferred to Human', 'transferred');
+                        addTranscriptBubble(`[SYSTEM] Call transferred to human supervisor. Reason: ${args.reason}`, 'system');
+                        return JSON.stringify({ status: "Transferring call to human agent..." });
+                    }
+                }
+            });
+
         } catch (err) {
             console.error(err);
             setCallStatus('Error connecting to ElevenLabs', 'error');
         }
     }
-
-    async function sendAudioChunk(b64Audio) {
-        try {
-            const res = await fetch(`${API_BASE_URL}/elevenlabs/message`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: elevenSessionId, audio: b64Audio })
-            });
-            if (!res.ok) throw new Error('ElevenLabs processing error');
-            const result = await res.json();
-            if (result.transcript) {
-                addTranscriptBubble(result.transcript, 'assistant');
-            }
-            if (result.audio) {
-                const audioBlob = base64ToBlob(result.audio, 'audio/mpeg');
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                audio.play();
-            }
-        } catch (e) {
-            console.error('Audio chunk error:', e);
-        }
-    }
-
-    function base64ToBlob(base64, mime) {
-        const bytes = atob(base64);
-        const len = bytes.length;
-        const arr = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            arr[i] = bytes.charCodeAt(i);
-        }
-        return new Blob([arr], { type: mime });
-    }
-
-    async function endElevenConversation() {
-        try {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            if (audioStream) {
-                audioStream.getTracks().forEach(t => t.stop());
-            }
-            if (elevenSessionId) {
-                await fetch(`${API_BASE_URL}/elevenlabs/end`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: elevenSessionId })
-                });
-            }
-        } catch (e) {
-            console.error('Error ending ElevenLabs session', e);
-        } finally {
-            elevenSessionId = null;
-            mediaRecorder = null;
-            audioStream = null;
-        }
-    }
-
-    // Clean up ElevenLabs resources in endCall (function updated below)
 
     // Establish real-time WebSocket connection to backend voice agent
     function connectWebSocket() {
@@ -643,7 +768,6 @@ function endCall() {
             }, 1500);
         };
     }
-}
 
 // Bind event listeners
 micButton.addEventListener('click', toggleCall);

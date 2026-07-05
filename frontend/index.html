@@ -2,6 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            fetch('/api/log-error', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    message: String(message),
+                    source: String(source),
+                    lineno: Number(lineno),
+                    colno: Number(colno),
+                    stack: error ? String(error.stack) : null
+                })
+            }).catch(e => console.error(e));
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            fetch('/api/log-error', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    message: String(event.reason),
+                    stack: event.reason && event.reason.stack ? String(event.reason.stack) : null
+                })
+            }).catch(e => console.error(e));
+        });
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AlphaMed Voice AI - Control Dashboard</title>
     <link rel="stylesheet" href="style.css">
@@ -140,6 +165,7 @@
             </section>
         </main>
     </div>
+    <script src="elevenlabs-client.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
