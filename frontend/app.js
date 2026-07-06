@@ -556,6 +556,14 @@ function endCall() {
                 onError: (error) => {
                     console.error('ElevenLabs error:', error);
                     setCallStatus('Error connecting to ElevenLabs', 'error');
+                    fetch('/api/log-error', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            message: 'ElevenLabs client error: ' + String(error) + (error && error.message ? ' - ' + error.message : ''),
+                            stack: error && error.stack ? String(error.stack) : null
+                        })
+                    }).catch(e => console.error(e));
                 },
                 onMessage: (msg) => {
                     console.log('ElevenLabs message:', msg);
