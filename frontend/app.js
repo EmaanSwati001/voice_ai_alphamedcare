@@ -84,6 +84,7 @@ function RecognitionWrapper() {
         addTranscriptBubble(transcript, 'user');
 
         // Process text using our local mock rule processor
+        // speakText() will restart recognition after speaking finishes
         await processUserMessage(transcript);
     };
 
@@ -120,6 +121,8 @@ function addTranscriptBubble(text, sender) {
 }
 
 // Speak text out loud using browser Speech Synthesis API
+// NOTE: Chrome/Windows has a known bug where speechSynthesis.onend sometimes
+// never fires, breaking the conversation loop. We use a polling watchdog fix.
 function speakText(text) {
     if (!synthesis) return;
 
@@ -127,30 +130,42 @@ function speakText(text) {
     synthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    // Find a good female/male English voice if available
+    // Find a good English voice if available
     const voices = synthesis.getVoices();
     const englishVoice = voices.find(voice => voice.lang.includes('en-US')) || voices[0];
     if (englishVoice) {
         utterance.voice = englishVoice;
     }
 
+    let hasEnded = false;
+    let watchdogInterval = null;
+
+    function onSpeechEnd() {
+        if (hasEnded) return;
+        hasEnded = true;
+        if (watchdogInterval) { clearInterval(watchdogInterval); watchdogInterval = null; }
+        audioWave.classList.remove('active');
+        if (isCallActive && modeToggle.value === 'browser') {
+            setCallStatus('Listening...', 'active');
+            if (recognition) {
+                try { recognition.start(); } catch(e) { console.warn('mic restart:', e); }
+            }
+        } else if (!isCallActive) {
+            setCallStatus('Ready to start call');
+        }
+    }
+
     utterance.onstart = () => {
         setCallStatus('Speaking...', 'active');
         audioWave.classList.add('active');
+        // Watchdog: Chrome/Windows onend bug — poll until speaking stops
+        watchdogInterval = setInterval(() => {
+            if (!synthesis.speaking) { onSpeechEnd(); }
+        }, 250);
     };
 
-    utterance.onend = () => {
-        audioWave.classList.remove('active');
-        if (isCallActive) {
-            setCallStatus('Listening...', 'active');
-            // Restart speech recognition loop so user can answer
-            if (recognition) {
-                recognition.start();
-            }
-        } else {
-            setCallStatus('Ready to start call');
-        }
-    };
+    utterance.onend = onSpeechEnd;
+    utterance.onerror = onSpeechEnd;
 
     synthesis.speak(utterance);
 }
